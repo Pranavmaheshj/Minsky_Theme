@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minsky Manga Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=Shojumaru&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- STYLES (Unchanged) --- */
+        :root {
+            --ink-black: #1a1a1a;
+            --paper-white: #fdfdfd;
+            --accent-color: #ff4757; 
+            --border-thick: 4px solid var(--ink-black);
+            --shadow-hard: 8px 8px 0px var(--ink-black);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--paper-white);
+            background-image: radial-gradient(var(--ink-black) 1px, transparent 1px);
+            background-size: 20px 20px;
+            font-family: 'Comic Neue', cursive;
+            overflow: hidden;
+        }
+
+        .comic-panel {
+            background: white;
+            border: var(--border-thick);
+            width: 90%;
+            max-width: 500px;
+            padding: 2rem;
+            position: relative;
+            box-shadow: var(--shadow-hard);
+            transition: transform 0.2s;
+        }
+
+        .title-box {
+            background: var(--ink-black);
+            color: white;
+            padding: 10px 20px;
+            position: absolute;
+            top: -25px;
+            left: -10px;
+            transform: rotate(-2deg);
+            border: 2px solid white;
+        }
+
+        h1 {
+            font-family: 'Shojumaru', cursive; 
+            margin: 0;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            font-family: 'Bangers', cursive;
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 5px;
+            color: var(--ink-black);
+        }
+
+        .comic-input {
+            width: 100%;
+            padding: 12px;
+            font-family: 'Comic Neue', cursive;
+            font-size: 1.2rem;
+            border: 3px solid var(--ink-black);
+            background: #eee;
+            box-sizing: border-box; 
+            outline: none;
+        }
+
+        .comic-input:focus {
+            background: #fff;
+            border-color: var(--accent-color);
+        }
+
+        .speech-bubble {
+            position: relative;
+            background: #fff;
+            border: var(--border-thick);
+            padding: 40px 20px;
+            margin: 40px 0;
+            text-align: center;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50% 20% / 10% 40%;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            border-width: 20px 20px 0;
+            border-style: solid;
+            border-color: var(--ink-black) transparent;
+            display: block;
+            width: 0;
+        }
+        
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -14px;
+            left: 50%;
+            margin-left: 3px;
+            border-width: 17px 17px 0;
+            border-style: solid;
+            border-color: white transparent;
+            display: block;
+            width: 0;
+            z-index: 1;
+        }
+
+        #theme-display {
+            font-family: 'Shojumaru', cursive;
+            font-size: 2.2rem;
+            color: var(--ink-black);
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+
+        .action-btn {
+            background: var(--accent-color);
+            color: white;
+            font-family: 'Bangers', cursive; 
+            font-size: 2rem;
+            border: var(--border-thick);
+            padding: 15px 40px;
+            width: 100%;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            transition: all 0.1s;
+        }
+
+        .action-btn:hover {
+            background: white;
+            color: black;
+            box-shadow: 5px 5px 0 rgba(0,0,0,0.2);
+        }
+
+        .action-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: none;
+        }
+
+        .hidden { display: none; }
+        
+        #error-msg {
+            color: red;
+            font-weight: bold;
+            display: none;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        /* Loading Spinner */
+        #saving-status {
+            font-size: 0.9rem;
+            color: var(--ink-black);
+            margin-top: 10px;
+            display: none;
+        }
+
+        .speed-lines {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 50px,
+                rgba(0,0,0,0.05) 50px,
+                rgba(0,0,0,0.05) 52px
+            );
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="speed-lines"></div>
+
+    <div id="login-panel" class="comic-panel">
+        <div class="title-box">
+            <h1>Minsky Access</h1>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <div class="input-group">
+                <label>USER EMAIL</label>
+                <input type="email" id="email-input" class="comic-input" placeholder="Enter Kongu Email">
+            </div>
+
+            <div class="input-group">
+                <label>SECRET PASSWORD</label>
+                <input type="password" id="password-input" class="comic-input" placeholder="Enter Password">
+            </div>
+
+            <div id="error-msg">ACCESS DENIED! Invalid Email or Password.</div>
+
+            <button class="action-btn" onclick="attemptLogin()">ENTER</button>
+        </div>
+    </div>
+
+    <div id="generator-panel" class="comic-panel hidden">
+        <div class="title-box">
+            <h1>Minsky Theme</h1>
+        </div>
+
+        <div class="speech-bubble">
+            <div id="theme-display">???</div>
+        </div>
+
+        <button class="action-btn" onclick="generateTheme()">GENERATE!</button>
+        <div id="saving-status">Saving to Cloud...</div>
+    </div>
+
+    <script>
+        // ==========================================
+        // PASTE YOUR GOOGLE SCRIPT WEB APP URL HERE
+        // ==========================================
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyfh-14ibs4n4AJYxJmfVPJpgcn0yIGI_hOijgJLuor8bPP96C_zQse9XxMQV2Ljlkg/exec"; 
+        
+        let currentUserEmail = "";
+        let hasSavedData = false;
+
+        const authorizedEmails = [
+            "joshyadeffyd.24cse@kongu.edu",
+            "kalaibharathib.24cse@kongu.edu",
+            "dharshinics.24eee@kongu.edu",
+            "ishwariyas.24eee@kongu.edu",
+            "pranavrajam.22aim@kongu.edu"
+        ];
+
+        const themes = [
+            { title: "Thalaivar", color: "#00d2d3" },
+            { title: "Thalapathy", color: "#F1BF00" }, 
+            { title: "Thala", color: "#a29bfe" },
+            { title: "Anime", color: "#54a0ff" },
+            { title: "Marvel", color: "#ff6b6b" },
+            { title: "DC", color: "#feca57" },
+            { title: "Pirates of the Caribbean", color: "#1dd1a1" },
+            { title: "Star Wars", color: "#576574" },
+            { title: "Harry Potter", color: "#ff9ff3" },
+            { title: "Battle Royale", color: "#c8d6e5" }
+        ];
+
+        function attemptLogin() {
+            const emailIn = document.getElementById('email-input').value.trim().toLowerCase();
+            const passIn = document.getElementById('password-input').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            if (authorizedEmails.includes(emailIn) && passIn === "minsky") {
+                currentUserEmail = emailIn; 
+                document.getElementById('login-panel').classList.add('hidden');
+                document.getElementById('generator-panel').classList.remove('hidden');
+            } else {
+                errorMsg.style.display = 'block';
+                const panel = document.getElementById('login-panel');
+                panel.style.transform = "translateX(10px)";
+                setTimeout(() => panel.style.transform = "translateX(0)", 100);
+            }
+        }
+
+        function generateTheme() {
+            const displayTitle = document.getElementById('theme-display');
+            const root = document.documentElement;
+
+            const randomIndex = Math.floor(Math.random() * themes.length);
+            const selectedTheme = themes[randomIndex];
+
+            displayTitle.innerText = selectedTheme.title;
+            root.style.setProperty('--accent-color', selectedTheme.color);
+
+            const bubble = document.querySelector('.speech-bubble');
+            bubble.style.transform = "scale(0.95)";
+            setTimeout(() => {
+                bubble.style.transform = "scale(1)";
+            }, 100);
+
+            // GOOGLE SHEET SAVE LOGIC (Runs only once)
+            if (!hasSavedData && currentUserEmail !== "") {
+                saveToGoogleSheet(currentUserEmail, selectedTheme.title);
+                hasSavedData = true; 
+            }
+        }
+
+        function saveToGoogleSheet(email, theme) {
+            const statusMsg = document.getElementById('saving-status');
+            statusMsg.style.display = 'block';
+            statusMsg.innerText = "Saving to Google Sheet...";
+
+            // Send data using 'no-cors' mode (Browser won't complain)
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: email, theme: theme })
+            }).then(() => {
+                // Since 'no-cors' doesn't return readable status, we assume success if no error thrown
+                statusMsg.innerText = "Saved Successfully!";
+                setTimeout(() => { statusMsg.style.display = 'none'; }, 2000);
+            }).catch(err => {
+                console.error(err);
+                statusMsg.innerText = "Error Saving!";
+                statusMsg.style.color = "red";
+            });
+        }
+    </script>
+</body>
+</html>
