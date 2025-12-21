@@ -3,17 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minsky Manga Login</title>
+    <title>Minsky Manga Hub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=Shojumaru&display=swap" rel="stylesheet">
 
     <style>
-        /* --- STYLES (Unchanged) --- */
+        /* --- ANIMATIONS --- */
+        @keyframes popUp {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* --- STYLES --- */
         :root {
             --ink-black: #1a1a1a;
             --paper-white: #fdfdfd;
             --accent-color: #ff4757; 
+            --idea-color: #2ed573; 
             --border-thick: 4px solid var(--ink-black);
             --shadow-hard: 8px 8px 0px var(--ink-black);
         }
@@ -21,15 +29,17 @@
         body {
             margin: 0;
             padding: 0;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
+            padding: 40px 0;
             background-color: var(--paper-white);
             background-image: radial-gradient(var(--ink-black) 1px, transparent 1px);
             background-size: 20px 20px;
             font-family: 'Comic Neue', cursive;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
         .comic-panel {
@@ -41,6 +51,12 @@
             position: relative;
             box-shadow: var(--shadow-hard);
             transition: transform 0.2s;
+            margin-bottom: 50px;
+            animation: popUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .comic-panel:hover {
+            transform: scale(1.01);
         }
 
         .title-box {
@@ -62,6 +78,7 @@
             text-transform: uppercase;
         }
 
+        /* --- INPUTS --- */
         .input-group {
             margin-bottom: 20px;
             text-align: left;
@@ -91,14 +108,15 @@
             border-color: var(--accent-color);
         }
 
+        /* --- SPEECH BUBBLES --- */
         .speech-bubble {
             position: relative;
             background: #fff;
             border: var(--border-thick);
-            padding: 40px 20px;
+            padding: 30px 20px;
             margin: 40px 0;
             text-align: center;
-            min-height: 80px;
+            min-height: 100px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -132,14 +150,23 @@
             z-index: 1;
         }
 
-        #theme-display {
+        .display-title {
             font-family: 'Shojumaru', cursive;
-            font-size: 2.2rem;
+            font-size: 2rem;
             color: var(--ink-black);
             text-transform: uppercase;
             line-height: 1.2;
+            margin-bottom: 10px;
         }
 
+        .display-desc {
+            font-family: 'Comic Neue', cursive;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #555;
+        }
+
+        /* --- BUTTONS --- */
         .action-btn {
             background: var(--accent-color);
             color: white;
@@ -154,6 +181,10 @@
             position: relative;
             transition: all 0.1s;
         }
+        
+        #idea-btn {
+            background: var(--idea-color);
+        }
 
         .action-btn:hover {
             background: white;
@@ -166,7 +197,7 @@
             box-shadow: none;
         }
 
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         
         #error-msg {
             color: red;
@@ -177,16 +208,17 @@
             font-size: 0.9rem;
         }
 
-        /* Loading Spinner */
-        #saving-status {
+        /* Shared status for both panels */
+        .saving-status {
             font-size: 0.9rem;
             color: var(--ink-black);
             margin-top: 10px;
             display: none;
+            text-align: center;
         }
 
         .speed-lines {
-            position: absolute;
+            position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             pointer-events: none;
             background: repeating-linear-gradient(
@@ -197,6 +229,13 @@
                 rgba(0,0,0,0.05) 52px
             );
             z-index: -1;
+        }
+        
+        #dashboard-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
     </style>
 </head>
@@ -226,36 +265,68 @@
         </div>
     </div>
 
-    <div id="generator-panel" class="comic-panel hidden">
-        <div class="title-box">
-            <h1>Minsky Theme</h1>
+    <div id="dashboard-wrapper" class="hidden">
+        
+        <div class="comic-panel">
+            <div class="title-box">
+                <h1>Minsky Theme</h1>
+            </div>
+
+            <div class="speech-bubble">
+                <div id="theme-title" class="display-title">???</div>
+            </div>
+
+            <button class="action-btn" onclick="generateTheme()">GENERATE THEME</button>
+            <div id="theme-status" class="saving-status">Saving to Cloud...</div>
         </div>
 
-        <div class="speech-bubble">
-            <div id="theme-display">???</div>
+        <div class="comic-panel">
+            <div class="title-box" style="background: var(--idea-color);">
+                <h1>Minsky Idea</h1>
+            </div>
+
+            <div class="speech-bubble">
+                <div id="idea-title" class="display-title">???</div>
+                <div id="idea-desc" class="display-desc">Click button for an idea!</div>
+            </div>
+
+            <button id="idea-btn" class="action-btn" onclick="generateIdea()">GENERATE IDEA</button>
+            <div id="idea-status" class="saving-status">Saving to Cloud...</div>
         </div>
 
-        <button class="action-btn" onclick="generateTheme()">GENERATE!</button>
-        <div id="saving-status">Saving to Cloud...</div>
     </div>
 
     <script>
         // ==========================================
-        // PASTE YOUR GOOGLE SCRIPT WEB APP URL HERE
+        // PASTE YOUR NEW GOOGLE SCRIPT URL HERE
         // ==========================================
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyfh-14ibs4n4AJYxJmfVPJpgcn0yIGI_hOijgJLuor8bPP96C_zQse9XxMQV2Ljlkg/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTbBVKG6Ml2yYsE8sfaFaPATBA1HXNz4p4pVtKDlKq4kuz8DUkdTc73SMMkYFCZ1Q4/exec"; 
         
+        // Data Tracking
         let currentUserEmail = "";
-        let hasSavedData = false;
+        let currentThemeText = "Not Selected";
+        let currentIdeaText = "Not Selected";
+
+        // Flags to ensure we only save once per button press
+        let hasSavedTheme = false;
+        let hasSavedIdea = false;
 
         const authorizedEmails = [
             "joshyadeffyd.24cse@kongu.edu",
             "kalaibharathib.24cse@kongu.edu",
             "dharshinics.24eee@kongu.edu",
             "ishwariyas.24eee@kongu.edu",
+            "gurudhivakarcm.24it@kongu.edu",
+            "sundareswaranm.24it@kongu.edu",
+            "divakarn.24csd@kongu.edu",
+            "sheshanths.24it@kongu.edu",
+            "kousikaashrees.23it@kongu.edu",
+            "vaishnavidevirm.24csd@kongu.edu",
+            "suriyaprakashvm.24it@kongu.edu",
             "pranavrajam.22aim@kongu.edu"
         ];
 
+        // --- THEMES LIST ---
         const themes = [
             { title: "Thalaivar", color: "#00d2d3" },
             { title: "Thalapathy", color: "#F1BF00" }, 
@@ -269,6 +340,21 @@
             { title: "Battle Royale", color: "#c8d6e5" }
         ];
 
+        // --- IDEAS LIST ---
+        const ideas = [
+            { title: "Student Mgmt System", desc: "Login, student details, marks, attendance" },
+            { title: "Online Book Store", desc: "Book listing, search, issue/return, admin panel" },
+            { title: "College Events", desc: "Event creation, registration, notifications" },
+            { title: "Clinic Management", desc: "Patient records, appointments, doctor login" },
+            { title: "Online Voting", desc: "User login, vote submission, result display" },
+            { title: "Job Portal", desc: "Job posting, apply, admin approval" },
+            { title: "Feedback System", desc: "User feedback, ratings, admin dashboard" },
+            { title: "To-Do App", desc: "Add, update, delete tasks with login" },
+            { title: "Online Exams", desc: "Question paper, timer, result calculation" },
+            { title: "Simple E-commerce", desc: "Product list, cart, order summary" }
+        ];
+
+        // --- LOGIN FUNCTION ---
         function attemptLogin() {
             const emailIn = document.getElementById('email-input').value.trim().toLowerCase();
             const passIn = document.getElementById('password-input').value;
@@ -277,55 +363,98 @@
             if (authorizedEmails.includes(emailIn) && passIn === "minsky") {
                 currentUserEmail = emailIn; 
                 document.getElementById('login-panel').classList.add('hidden');
-                document.getElementById('generator-panel').classList.remove('hidden');
+                document.getElementById('dashboard-wrapper').classList.remove('hidden');
             } else {
                 errorMsg.style.display = 'block';
                 const panel = document.getElementById('login-panel');
-                panel.style.transform = "translateX(10px)";
-                setTimeout(() => panel.style.transform = "translateX(0)", 100);
+                panel.style.animation = 'none';
+                setTimeout(() => {
+                    panel.style.transform = "translateX(10px)";
+                    setTimeout(() => panel.style.transform = "translateX(0)", 100);
+                }, 10);
             }
         }
 
+        // --- THEME GENERATOR ---
         function generateTheme() {
-            const displayTitle = document.getElementById('theme-display');
+            const titleEl = document.getElementById('theme-title');
             const root = document.documentElement;
 
             const randomIndex = Math.floor(Math.random() * themes.length);
             const selectedTheme = themes[randomIndex];
 
-            displayTitle.innerText = selectedTheme.title;
+            // Update Global Variable
+            currentThemeText = selectedTheme.title;
+            
+            // Update UI
+            titleEl.innerText = selectedTheme.title;
             root.style.setProperty('--accent-color', selectedTheme.color);
 
-            const bubble = document.querySelector('.speech-bubble');
+            animateBubble('theme-title');
+
+            // Save if first time clicking Theme
+            if (!hasSavedTheme && currentUserEmail !== "") {
+                saveToGoogleSheet('theme-status'); // Pass the ID of the status message
+                hasSavedTheme = true; 
+            }
+        }
+
+        // --- IDEA GENERATOR ---
+        function generateIdea() {
+            const titleEl = document.getElementById('idea-title');
+            const descEl = document.getElementById('idea-desc');
+
+            const randomIndex = Math.floor(Math.random() * ideas.length);
+            const selectedIdea = ideas[randomIndex];
+
+            // Update Global Variable
+            currentIdeaText = selectedIdea.title;
+
+            // Update UI
+            titleEl.innerText = selectedIdea.title;
+            descEl.innerText = selectedIdea.desc;
+
+            animateBubble('idea-title');
+
+            // Save if first time clicking Idea
+            if (!hasSavedIdea && currentUserEmail !== "") {
+                saveToGoogleSheet('idea-status'); // Pass the ID of the status message
+                hasSavedIdea = true;
+            }
+        }
+
+        // --- ANIMATION HELPER ---
+        function animateBubble(elementId) {
+            const bubble = document.getElementById(elementId).parentElement;
             bubble.style.transform = "scale(0.95)";
             setTimeout(() => {
                 bubble.style.transform = "scale(1)";
             }, 100);
-
-            // GOOGLE SHEET SAVE LOGIC (Runs only once)
-            if (!hasSavedData && currentUserEmail !== "") {
-                saveToGoogleSheet(currentUserEmail, selectedTheme.title);
-                hasSavedData = true; 
-            }
         }
 
-        function saveToGoogleSheet(email, theme) {
-            const statusMsg = document.getElementById('saving-status');
+        // --- SAVE TO SHEET (UPDATED TO SEND BOTH) ---
+        function saveToGoogleSheet(statusElementId) {
+            const statusMsg = document.getElementById(statusElementId);
             statusMsg.style.display = 'block';
             statusMsg.innerText = "Saving to Google Sheet...";
+            statusMsg.style.color = "black";
 
-            // Send data using 'no-cors' mode (Browser won't complain)
+            // We send the Current Email, Current Theme, and Current Idea
+            const payload = JSON.stringify({ 
+                email: currentUserEmail, 
+                theme: currentThemeText,
+                idea: currentIdeaText
+            });
+
             fetch(SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors', 
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email: email, theme: theme })
+                headers: { 'Content-Type': 'text/plain' },
+                body: payload
             }).then(() => {
-                // Since 'no-cors' doesn't return readable status, we assume success if no error thrown
                 statusMsg.innerText = "Saved Successfully!";
-                setTimeout(() => { statusMsg.style.display = 'none'; }, 2000);
+                statusMsg.style.color = "green";
+                setTimeout(() => { statusMsg.style.display = 'none'; }, 3000);
             }).catch(err => {
                 console.error(err);
                 statusMsg.innerText = "Error Saving!";
